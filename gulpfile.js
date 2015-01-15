@@ -1,57 +1,106 @@
-var src = './src',
-    dist = './app',
-    fs = require('fs'),
-    gulp = require('gulp'),
+
+var gulp = require('gulp'),
+    concat = require('gulp-concat'),
     plumber = require('gulp-plumber'),
-    ngAnnotate = require('gulp-ng-annotate'),
+    stylus = require('gulp-stylus'),
     autoprefixer = require('gulp-autoprefixer'),
-    uglify = require('gulp-uglify'),
-    react = require('gulp-react'),
-    install = require('gulp-install'),
-    jshint = require('gulp-jshint');
+    minifyCSS = require('gulp-minify-css'),
+    imagemin = require('gulp-imagemin'),
+    jshint = require('gulp-jshint'),
+    browserify = require('gulp-browserify'),
+    del = require('del'),
+    sourcemaps = require('gulp-sourcemaps');
 
 var paths = {
-    bower: {
-        dist: '.bowerrc'.directory || dist + '/bower_components'
+    app: './app',
+    src: './src',
+    fonts: {
+        src: './src/static/fonts',
+        dest: './app/static/fonts'
     },
     images: {
-        src: src + '/images/**/*',
-        dist: dist + '/images'
-    },
-    scripts: {
-        src: src + '/modules',
-        polyfills: src + '/polyfills',
-        watch: src + '/**/*.js',
-        lib: src + '/lib',
-        libDest: dist + '/applib.js',
-        react: src + '/react/**/*.jsx',
-        dist: dist + '/app.js'
+        src: './src/static/images/**/*',
+        dest: './app/static/images'
     },
     styles: {
-        src: src + '/app.styl',
-        watch: src + '/**/*.styl',
-        dist: dist + '/app.css'
+        src: './src/app.styl',
+        dest: './app/static/styles'
     },
-    fonts: {
-        src: src + '/fonts/**/*',
-        dist: dist + '/fonts'
+    scripts: {
+        src: './src/app.js'
+    },
+    views: {
+        index: './src/index.html',
+        indexDest: './app/index.html',
+        src: './src/views/**/*',
+        dest: './app/views'
     }
 };
 
-// Handle images here
+// Development related tasks
+gulp.task('dev', ['clean', 'views', 'styles', 'images', 'lint', 'browserify']);
+
+gulp.task('clean', function() {
+    del(paths.views.dest, function() {});
+});
+
 gulp.task('images', function() {
     return gulp.src(paths.images.src)
+            .pipe(imagemin({
+                progressive: true,
+                svgoPlugins: [{removeViewBox: false}]
+            }))
+            .pipe(gulp.dest('dist'));
+});
+
+// Check our Javascript
+gulp.task('lint', function() {
+    return gulp.src('./src/**/*.js')
+            .pipe(jshint())
+            .pipe(jshint.reporter('default'));
+});
+
+// We use Browserify to write modular applications
+gulp.task('scripts', function () {
+    gulp.src(paths.scripts.src))
+        .pipe(browserify({
+            insertGlobals: true,
+            debug: true
+        }))
+    .pipe(concat('app.js'))
+    .pipe(gulp.dest(paths.app));
+});
+
+// Minify our CSS, convert Stylus to CSS
+// Autoprefix our CSS and add in sourcemaps
+gulp.task('styles', function () {
+    return gulp.src(paths.styles.src)
+        .pipe(sourcemaps.init())
+            .pipe(plumber())
+            .pipe(stylus())
+            .pipe(autoprefixer('last 2 versions', '> 1%', 'ie 8'))
+            .pipe(minifyCSS({keepBreaks:true}))
+        .pipe(sourcemaps.write())
+        .pipe(gulp.dest(paths.styles.dest));
+});
+
+gulp.task('fonts', function() {
+    gulp.src(paths.fonts.src)
         .pipe(plumber())
-        .pipe(gulp.dest(paths.images.dist));
+        .pipe(gulp.dest(paths.fonts.dest));
 });
 
-// Handle minification of CSS here
-gulp.task('css', function() {
-
+// Get our views and move them over to the destination application directory
+gulp.task('views', function() {
+    gulp.src(paths.views.index).pipe(gulp.dest(paths.views.indexDest));
+    gulp.src(paths.views.src).pipe(gulp.dest(paths.views.dest));
 });
 
-// Handle minifcation of JS here
+gulp.task('watch', ['lint'], function () {
+    gulp.watch('./src/**/*.styl', ['styles']);
+    gulp.watch('./src/static/images/**/*', ['images']);
+    gulp.watch(['./src/**/*.html'], ['views']);
+    gulp.watch('./src/**/*.js', ['lint', 'scripts']);
+});
 
-// Handle AngularJS compilation here
-
-// Handle ReactJS compilation here
+gulp.task('default', ['dev', 'watch']);

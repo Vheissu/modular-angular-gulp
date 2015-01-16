@@ -4,6 +4,9 @@
     require('angular');
     require('angular-route');
 
+    // Include modules
+    require('modules/home');
+
     angular.module('someApp', ['ngRoute']);
         .config([
             '$locationProvider',
@@ -21,8 +24,6 @@
                 });
             }
           ]);
-
-    var HomeCtrl = require('./modules/home/controllers/homectrl');
 
     angular.module('someApp').controller('HomeCtrl', ['$scope', HomeCtrl]);
 })();

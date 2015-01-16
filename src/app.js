@@ -12,11 +12,11 @@
               $locationProvider.hashPrefix('!');
               // routes
               $routeProvider
-                .when("/", {
-                  templateUrl: "./index.html",
-                  controller: "HomeCtrl"
+                .when('/', {
+                  templateUrl: './index.html',
+                  controller: 'HomeCtrl'
                 })
-                .otherwise({å
+                .otherwise({
                    redirectTo: '/'
                 });
             }

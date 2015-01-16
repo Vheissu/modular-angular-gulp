@@ -8,6 +8,7 @@ var gulp = require('gulp'),
     imagemin = require('gulp-imagemin'),
     jshint = require('gulp-jshint'),
     browserify = require('gulp-browserify'),
+    uglify = require('gulp-uglify'),
     del = require('del'),
     sourcemaps = require('gulp-sourcemaps');
 
@@ -27,7 +28,9 @@ var paths = {
         dest: './app/static/styles'
     },
     scripts: {
-        src: './src/app.js'
+        src: './src/app.js',
+        staticSrc: './src/static/scripts/**/*',
+        staticDest: './app/static/scripts'
     },
     views: {
         index: './src/index.html',
@@ -38,7 +41,7 @@ var paths = {
 };
 
 // Development related tasks
-gulp.task('dev', ['clean', 'views', 'styles', 'images', 'lint', 'browserify']);
+gulp.task('dev', ['clean', 'views', 'styles', 'images', 'lint', 'scripts', 'static-scripts']);
 
 gulp.task('clean', function() {
     del(paths.views.dest, function() {});
@@ -50,7 +53,7 @@ gulp.task('images', function() {
                 progressive: true,
                 svgoPlugins: [{removeViewBox: false}]
             }))
-            .pipe(gulp.dest('dist'));
+            .pipe(gulp.dest(paths.images.dest));
 });
 
 // Check our Javascript
@@ -58,6 +61,15 @@ gulp.task('lint', function() {
     return gulp.src('./src/**/*.js')
             .pipe(jshint())
             .pipe(jshint.reporter('default'));
+});
+
+// Static Javascript file copying
+// You might just use Browserify this is useful for non-Browserify JS
+gulp.task('static-scripts', function() {
+    gulp.src(paths.scripts.staticSrc)
+        .pipe(plumber())
+        .pipe(uglify())
+        .pipe(gulp.dest(paths.staticDest));
 });
 
 // We use Browserify to write modular applications
@@ -100,7 +112,7 @@ gulp.task('watch', ['lint'], function () {
     gulp.watch('./src/**/*.styl', ['styles']);
     gulp.watch('./src/static/images/**/*', ['images']);
     gulp.watch(['./src/**/*.html'], ['views']);
-    gulp.watch('./src/**/*.js', ['lint', 'scripts']);
+    gulp.watch('./src/**/*.js', ['lint', 'scripts', 'static-scripts']);
 });
 
 gulp.task('default', ['dev', 'watch']);

@@ -24,6 +24,4 @@
                 });
             }
           ]);
-
-    angular.module('someApp').controller('HomeCtrl', ['$scope', HomeCtrl]);
 })();

@@ -74,7 +74,7 @@ gulp.task('static-scripts', function() {
 
 // We use Browserify to write modular applications
 gulp.task('scripts', function () {
-    gulp.src(paths.scripts.src))
+    gulp.src(paths.scripts.src)
         .pipe(browserify({
             insertGlobals: true,
             debug: true
